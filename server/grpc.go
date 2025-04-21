@@ -1,4 +1,3 @@
-// server/grpc.go
 package server
 
 import (
@@ -7,22 +6,38 @@ import (
 	"log"
 	"net"
 
+	"github.com/CuriousHet/Notify/data"
 	"github.com/CuriousHet/Notify/proto/postpb"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 )
 
-type PostServer struct {
+type postServer struct {
 	postpb.UnimplementedPostServiceServer
 }
 
-func (s *PostServer) PublishPost(ctx context.Context, post *postpb.Post) (*postpb.NotificationResponse, error) {
-	log.Printf("Received Post from %s: %s", post.AuthorId, post.Content)
+func (s *postServer) PublishPost(ctx context.Context, req *postpb.Post) (*postpb.NotificationResponse, error) {
+	author := req.AuthorId
+	postID := req.PostId
+	content := req.Content
 
-	// Later we'll create and dispatch notifications here
+	log.Printf("Received post from %s: [%s] %s\n", author, postID, content)
+
+	followers, ok := data.Followers[author]
+	if !ok || len(followers) == 0 {
+		log.Printf("No followers found for user: %s\n", author)
+		return &postpb.NotificationResponse{
+			Message: fmt.Sprintf("Post received, but no followers for user: %s", author),
+		}, nil
+	}
+
+	for _, follower := range followers {
+		log.Printf("Notification: %s received post %s from %s\n", follower, postID, author)
+	}
+
 	return &postpb.NotificationResponse{
-		Message: fmt.Sprintf("Post %s published successfully!", post.PostId),
+		Message: fmt.Sprintf("Post from %s sent to %d followers", author, len(followers)),
 	}, nil
 }
 
@@ -33,11 +48,11 @@ func StartGRPCServer() {
 	}
 
 	s := grpc.NewServer()
-	postpb.RegisterPostServiceServer(s, &PostServer{})
+	postpb.RegisterPostServiceServer(s, &postServer{})
 
 	reflection.Register(s)
 
-	log.Println("gRPC server running at :5050")
+	log.Println("gRPC server running on port 5050...")
 	if err := s.Serve(lis); err != nil {
 		log.Fatalf("Failed to serve: %v", err)
 	}
