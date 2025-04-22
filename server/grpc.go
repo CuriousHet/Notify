@@ -7,6 +7,7 @@ import (
 	"net"
 
 	"github.com/CuriousHet/Notify/data"
+	"github.com/CuriousHet/Notify/notification"
 	"github.com/CuriousHet/Notify/proto/postpb"
 
 	"google.golang.org/grpc"
@@ -15,6 +16,7 @@ import (
 
 type postServer struct {
 	postpb.UnimplementedPostServiceServer
+	Queue *notification.Queue
 }
 
 func (s *postServer) PublishPost(ctx context.Context, req *postpb.Post) (*postpb.NotificationResponse, error) {
@@ -33,7 +35,13 @@ func (s *postServer) PublishPost(ctx context.Context, req *postpb.Post) (*postpb
 	}
 
 	for _, follower := range followers {
-		log.Printf("Notification: %s received post %s from %s\n", follower, postID, author)
+		notif := notification.Notification{
+			FollowerID: follower,
+			AuthorID:   author,
+			PostID:     postID,
+			Content:    content,
+		}
+		s.Queue.Enqueue(notif)
 	}
 
 	return &postpb.NotificationResponse{
@@ -41,15 +49,14 @@ func (s *postServer) PublishPost(ctx context.Context, req *postpb.Post) (*postpb
 	}, nil
 }
 
-func StartGRPCServer() {
+func StartGRPCServer(queue *notification.Queue) {
 	lis, err := net.Listen("tcp", ":5050")
 	if err != nil {
 		log.Fatalf("Failed to listen: %v", err)
 	}
 
 	s := grpc.NewServer()
-	postpb.RegisterPostServiceServer(s, &postServer{})
-
+	postpb.RegisterPostServiceServer(s, &postServer{Queue: queue})
 	reflection.Register(s)
 
 	log.Println("gRPC server running on port 5050...")
