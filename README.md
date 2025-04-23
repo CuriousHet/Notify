@@ -6,12 +6,12 @@ This is a simple, beginner-friendly project built in **Go (Golang)** that simula
 
 ## 🧠 What You’ll Learn
 
-- ✅ How distributed notification systems work
-- ✅ gRPC for efficient communication
-- ✅ Queues and background workers (using Go routines)
-- ✅ Retrying failed notifications
-- ✅ In-memory data storage and retrieval
-- ✅ GraphQL API (via [graph-gophers/graphql-go](https://github.com/graph-gophers/graphql-go)) for querying data
+- ✅ How distributed notification systems work.
+- ✅ gRPC for efficient communication.
+- ✅ Queues and background workers (using Go routines).
+- ✅ Retrying failed notifications.
+- ✅ In-memory data storage and retrieval.
+- ✅ GraphQL API (via [graph-gophers/graphql-go](https://github.com/graph-gophers/graphql-go)) for querying data.
 
 ---
 
@@ -88,18 +88,6 @@ map[userID][]string
 ```
 
 This helps us retrieve them later via GraphQL.
-
-### GraphQL (Query Layer)
-
-Want to get all notifications for a user? Use GraphQL:
-```graphql
-{
-  notifications(userId: "user3")
-}
-```
-
-It only returns the notifications you care about—fast and clean!
-
 
 ## 🔥 Want to Try More?
 
