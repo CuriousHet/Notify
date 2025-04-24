@@ -33,18 +33,23 @@ func (d *Dispatcher) worker(_ int) {
 }
 
 func (d *Dispatcher) processNotification(n Notification) {
+	start := time.Now()
+
 	for attempt := 1; attempt <= d.retries; attempt++ {
 		if sendNotification(n) {
+			NotificationsSent.Inc()
+			DeliveryDuration.Observe(time.Since(start).Seconds())
 			log.Printf("[Worker] Notification sent to %s for post %s", n.FollowerID, n.PostID)
-
-			// Store notification for GraphQL
 			data.Save(n.FollowerID, formatNotification(n))
 			return
 		}
+
 		backoff := time.Duration(1<<attempt) * time.Second
 		log.Printf("[Worker] Failed to send to %s. Retrying in %v...", n.FollowerID, backoff)
 		time.Sleep(backoff)
 	}
+
+	NotificationsFailed.Inc()
 	log.Printf("[Worker] Giving up on sending to %s after %d attempts", n.FollowerID, d.retries)
 }
 
