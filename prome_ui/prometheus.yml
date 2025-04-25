@@ -4,4 +4,5 @@ global:
 scrape_configs:
   - job_name: 'notify-app'
     static_configs:
-      - targets: ['localhost:8081']
+      - targets: ['notify:8081']
+

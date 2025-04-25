@@ -1,14 +1,16 @@
-# 🚀 Notify - Distributed Notification Delivery Service (Go + gRPC + GraphQL + Prometheus)
+# Notify - Distributed Notification Delivery Service (Go + gRPC + GraphQL + Prometheus)
 
 This project simulates a **miniature version of how social media platforms (like Instagram or Twitter)** notify users when someone they follow creates a new post.
 
 It uses:
 
-- ✅ **gRPC** to simulate users publishing posts.
-- ✅ **Background worker queue** to dispatch notifications.
-- ✅ **Retry logic** for failed deliveries.
-- ✅ **GraphQL API** to fetch a user’s notifications.
-- ✅ **Prometheus metrics** to monitor performance and failures.
+- ✅ **gRPC** to simulate users publishing posts  
+- ✅ **Background worker queue** to dispatch notifications  
+- ✅ **Retry logic** for failed deliveries  
+- ✅ **GraphQL API** to fetch a user’s notifications  
+- ✅ **Prometheus metrics** to monitor performance and failures  
+
+---
 
 ## 📦 Project Features Overview
 
@@ -24,7 +26,7 @@ It uses:
 
 ---
 
-## ⚙️ How to Run
+## ⚙️ How to Run (Locally Without Docker)
 
 ### ✅ Step 1: Start the System
 
@@ -32,44 +34,35 @@ It uses:
 make run
 ```
 
-- gRPC Server → `localhost:5050`
-- GraphQL Server → `localhost:8081`
+- gRPC Server → `localhost:5050`  
+- GraphQL Server → `localhost:8081`  
 - Prometheus Metrics → `localhost:8081/metrics`
 
 ---
 
 ### ✅ Step 2: Publish a Post (via gRPC)
 
-Simulate post creation by a user:
-
 ```bash
 grpcurl -plaintext -d '{"postId":"p1","authorId":"user1","content":"Hello world!"}' localhost:5050 post.PostService/PublishPost
 ```
 
-🔄 What happens behind the scenes:
+🔄 Internally:
 
-- Finds all followers of `user1` (from mock data).
-- Creates a notification for each follower.
-- Queues those notifications.
-- Background workers pick from the queue and deliver them.
-- Logs are printed to the terminal:
-
-  ```
-  ✅ Notification sent to user2 for post p1
-  ```
+- Finds all followers of `user1` (from mock data)
+- Creates and queues notifications
+- Background workers pick from the queue and deliver them
+- Logs show success or failure
 
 ---
 
 ### ✅ Step 3: Query Notifications (via GraphQL)
-
-Use **Postman**, **Altair**, or a GraphQL client.
 
 URL:  
 ```
 http://localhost:8081/query
 ```
 
-GraphQL query:
+Example query:
 ```graphql
 {
   notifications(userId: "user2")
@@ -87,48 +80,28 @@ GraphQL query:
 
 ---
 
-### 📊 Step 4: Monitor with Prometheus
+## 📊 Step 4: Monitor with Prometheus (Manual)
 
-Visit:
+Visit raw metrics endpoint:
 ```
 http://localhost:8081/metrics
 ```
 
-Key Metrics:
+Metrics:
 
-- `notifications_sent_total`: Total successful notifications
-- `notifications_failed_total`: Failed notifications
-- `notification_delivery_duration_seconds`: Delivery time (histogram)
-
-Sample:
-```
-# HELP notifications_sent_total Total number of notifications successfully sent
-notifications_sent_total 2
-
-# HELP notifications_failed_total Total number of notifications that failed to send
-notifications_failed_total 0
-
-# HELP notification_delivery_duration_seconds Duration of notification deliveries
-notification_delivery_duration_seconds_bucket{le="0.1"} 2
-notification_delivery_duration_seconds_sum 0.01
-notification_delivery_duration_seconds_count 2
-```
-
-Your README is already super clean and beginner-friendly! Here's a small addition you can place right under the **Prometheus Metrics** section to include the **Prometheus UI (manually)** setup instructions (since Docker is for later):
+- `notifications_sent_total`
+- `notifications_failed_total`
+- `notification_delivery_duration_seconds`
 
 ---
 
-### 🖥️ Step 5: Add Prometheus UI (Manual Setup)
+## 🖥️ Optional: Prometheus UI (Manual Mode)
 
-Want to visualize metrics in a dashboard instead of raw `/metrics` text? Here's how:
+### 📥 Download Prometheus
 
-#### 📥 1. Download Prometheus 
+From: [https://prometheus.io/download/](https://prometheus.io/download/)
 
-Go to [https://prometheus.io/download/](https://prometheus.io/download/) and download the latest version for your OS.
-
-#### 📁 2. Create a Config File (`prometheus.yml`)
-
-In the same directory as `prometheus`, add a file named `prometheus.yml`:
+### 📁 Create `prometheus.yml`
 
 ```yaml
 global:
@@ -140,29 +113,131 @@ scrape_configs:
       - targets: ['localhost:8081']
 ```
 
-#### ▶️ 3. Start Prometheus
-
-In your terminal, run:
+### ▶️ Start Prometheus
 
 ```bash
 ./prometheus --config.file=prometheus.yml
 ```
 
-> 💡 Make sure you're inside the Prometheus directory when running this command.
-
-#### 🌐 4. Open Prometheus UI
-
-Visit:  
+Open Prometheus UI:  
 ```
 http://localhost:9090
 ```
 
-- Search for metrics like `notifications_sent_total`
-- Use the **Graph** tab to visualize delivery duration over time
+---
+
+## 🐳 Docker + Prometheus Monitoring
+
+Run the whole system using Docker Compose.
 
 ---
 
-Would you like me to commit this section directly into your README content above so it's fully integrated?
+### ✅ Step 1: Build and Run with Docker Compose
+
+```bash
+docker-compose up --build
+```
+
+Runs:
+
+- 🟣 `notify` (Go app):
+  - gRPC: `localhost:5050`
+  - GraphQL + Metrics: `localhost:8081`
+- 🟡 `prometheus`:
+  - UI: `localhost:9090`
+
+---
+
+### ✅ Step 2: gRPC Call (Inside Docker)
+
+```bash
+grpcurl -plaintext -d '{"postId":"p1","authorId":"user1","content":"Hello from Docker!"}' localhost:5050 post.PostService/PublishPost
+```
+
+---
+
+### ✅ Step 3: Query Notifications (GraphQL)
+
+URL:
+```
+http://localhost:8081/query
+```
+
+Query:
+```graphql
+{
+  notifications(userId: "user2")
+}
+```
+
+---
+
+### 📊 Step 4: Prometheus Metrics
+
+Open Prometheus UI:
+
+```
+http://localhost:9090
+```
+
+Query metrics like:
+
+- `notifications_sent_total`
+- `notifications_failed_total`
+- `notification_delivery_duration_seconds`
+
+> 💡 Scraping happens every 5s.
+
+---
+
+### 🧱 Docker File Structure
+
+#### `Dockerfile`
+
+```dockerfile
+FROM golang:1.23
+
+WORKDIR /app
+COPY . .
+
+RUN go mod tidy
+RUN go build -o notify main.go
+
+EXPOSE 5050
+EXPOSE 8081
+
+CMD ["./notify"]
+```
+
+#### `docker-compose.yml`
+
+```yaml
+services:
+  notify:
+    build: .
+    ports:
+      - "5050:5050"
+      - "8081:8081"
+
+  prometheus:
+    image: prom/prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prome_ui/prometheus.yml:/etc/prometheus/prometheus.yml
+```
+
+#### `prometheus.yml`
+
+```yaml
+global:
+  scrape_interval: 5s
+
+scrape_configs:
+  - job_name: 'notify-app'
+    static_configs:
+      - targets: ['notify:8081']
+```
 
 ---
 
@@ -170,62 +245,44 @@ Would you like me to commit this section directly into your README content above
 
 ### 🟣 gRPC (PublishPost)
 
-This simulates a user posting content:
-
 ```protobuf
 rpc PublishPost(Post) returns (NotificationResponse);
 ```
 
-It returns the number of notifications queued for delivery.
+Simulates user post publishing and returns how many notifications were queued.
 
 ---
 
-### 🔁 Queue + Dispatcher (Notification Engine)
+### 🔁 Queue + Worker Dispatcher
 
-- New notifications are added to a **Go channel (queue)**.
-- A pool of **goroutines (workers)** process the queue.
-- Each worker "sends" the notification (just logs it).
-- If it fails (simulated 10% failure rate), it:
-  - Retries up to 3 times
-  - Waits longer each time (exponential backoff)
+- Adds notifications to a channel (queue)
+- Worker goroutines consume the queue
+- Each "delivers" (logs) a notification
+- 10% chance of simulated failure → retried 3 times with backoff
 
 ---
 
-### 🧠 In-Memory Store
+### 🧠 In-Memory Data
 
-We simulate databases using maps in Go:
+Used maps to simulate DBs:
 
 ```go
-// Map: user → their followers
-map[string][]string
-
-// Map: user → their notifications
-map[string][]Notification
+map[string][]string        // followers
+map[string][]Notification  // user notifications
 ```
 
 ---
 
-### 📈 Metrics via Prometheus
+### 📈 Prometheus Metrics Tracked
 
-Track important health signals:
-
-| Metric                        | Description |
-|------------------------------|-------------|
-| `notifications_sent_total`   | # sent |
-| `notifications_failed_total` | # failed |
-| `notification_delivery_duration_seconds` | Delivery speed |
-
+| Metric                                | Description |
+|---------------------------------------|-------------|
+| `notifications_sent_total`           | # delivered |
+| `notifications_failed_total`         | # failed    |
+| `notification_delivery_duration_seconds` | Timing histogram |
 
 ---
 
-## 🔥 What You Can Try Next
-
-| Idea | Description |
-|------|-------------|
-| 💾 Persistent DB | Use SQLite/PostgreSQL instead of in-memory maps |
-| 📲 WebSocket Push | Push new notifications in real-time |
-| 🧪 Unit Tests | Write tests for retry logic and queue |
-| 🐳 Docker Support | Containerize your service with Docker |
 
 ![alt text](image.png)
 

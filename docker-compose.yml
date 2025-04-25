@@ -1,0 +1,15 @@
+  notify:
+    build: .
+    container_name: notify
+    ports:
+      - "8081:8081"  # GraphQL + Prometheus
+      - "5050:5050"  # gRPC
+    restart: always
+
+  prometheus:
+    image: prom/prometheus
+    container_name: prometheus
+    volumes:
+      - ./prome_ui/prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - "9090:9090"
