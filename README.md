@@ -114,6 +114,56 @@ notification_delivery_duration_seconds_sum 0.01
 notification_delivery_duration_seconds_count 2
 ```
 
+Your README is already super clean and beginner-friendly! Here's a small addition you can place right under the **Prometheus Metrics** section to include the **Prometheus UI (manually)** setup instructions (since Docker is for later):
+
+---
+
+### 🖥️ Step 5: Add Prometheus UI (Manual Setup)
+
+Want to visualize metrics in a dashboard instead of raw `/metrics` text? Here's how:
+
+#### 📥 1. Download Prometheus 
+
+Go to [https://prometheus.io/download/](https://prometheus.io/download/) and download the latest version for your OS.
+
+#### 📁 2. Create a Config File (`prometheus.yml`)
+
+In the same directory as `prometheus`, add a file named `prometheus.yml`:
+
+```yaml
+global:
+  scrape_interval: 5s
+
+scrape_configs:
+  - job_name: 'notify_service'
+    static_configs:
+      - targets: ['localhost:8081']
+```
+
+#### ▶️ 3. Start Prometheus
+
+In your terminal, run:
+
+```bash
+./prometheus --config.file=prometheus.yml
+```
+
+> 💡 Make sure you're inside the Prometheus directory when running this command.
+
+#### 🌐 4. Open Prometheus UI
+
+Visit:  
+```
+http://localhost:9090
+```
+
+- Search for metrics like `notifications_sent_total`
+- Use the **Graph** tab to visualize delivery duration over time
+
+---
+
+Would you like me to commit this section directly into your README content above so it's fully integrated?
+
 ---
 
 ## 🧰 Under the Hood – Explained Simply
@@ -165,6 +215,18 @@ Track important health signals:
 | `notifications_failed_total` | # failed |
 | `notification_delivery_duration_seconds` | Delivery speed |
 
-Use [Prometheus](https://prometheus.io) + [Grafana](https://grafana.com) to visualize this later!
 
 ---
+
+## 🔥 What You Can Try Next
+
+| Idea | Description |
+|------|-------------|
+| 💾 Persistent DB | Use SQLite/PostgreSQL instead of in-memory maps |
+| 📲 WebSocket Push | Push new notifications in real-time |
+| 🧪 Unit Tests | Write tests for retry logic and queue |
+| 🐳 Docker Support | Containerize your service with Docker |
+
+![alt text](image.png)
+
+![alt text](image-1.png)
